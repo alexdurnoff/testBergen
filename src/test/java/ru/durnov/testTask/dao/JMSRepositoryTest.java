@@ -7,8 +7,14 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import ru.durnov.testTask.requestbody.JsonDestination;
 import ru.durnov.testTask.requestbody.JsonMessage;
 import ru.durnov.testTask.requestbody.JsonMessages;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @Slf4j
 @RunWith(SpringRunner.class)
@@ -51,6 +57,15 @@ class JMSRepositoryTest {
         Assertions.assertEquals(jsonMessages.getMessageList().size(), 2);
         jsonMessages = jmsRepository.findByInterval("2021-05-01", "20ddd1-05-11");
         Assertions.assertEquals(jsonMessages.getMessageList().size(), 0);
+    }
+
+    @Test
+    void testDestinationToString() throws IOException {
+        JsonDestination jsonDestination = new JsonDestination("localhost");
+        ObjectMapper objectMapper = new ObjectMapper();
+        String json = new String(objectMapper.writeValueAsBytes(jsonDestination));
+        Files.newBufferedWriter(Path.of("jsondestionation1.txt")).write(json);
+        System.out.println(json);
     }
 
 }

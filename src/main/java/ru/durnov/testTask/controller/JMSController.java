@@ -1,5 +1,6 @@
 package ru.durnov.testTask.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import ru.durnov.testTask.dao.JMSRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import java.net.URI;
 import java.util.Optional;
 
 @RestController
+@Slf4j
 @RequestMapping(path = "/", produces = "application/json")
 public class JMSController {
     private final JMSRepository jmsRepository;
