@@ -18,6 +18,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -44,6 +45,10 @@ class TestTaskApplicationTests {
 
 	private static final ObjectMapper objectMapper = new ObjectMapper();
 
+	/*@Container
+	public static GenericContainer<?> artemisContainer = new GenericContainer<>("vromero/activemq-artemis")
+			.withExposedPorts(61616);*/
+
 	@Container
 	public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:13")
 			.withDatabaseName("test")
@@ -61,12 +66,9 @@ class TestTaskApplicationTests {
 					"spring.datasource.password=" + postgreSQLContainer.getPassword(),
 					"spring.datasource.driverClassName=org.postgresql.Driver",
 					"embedded.postgresql.schema=data.sql",
+					"org.apache.activemq=artemis-jms-server",
 					"spring.jpa.database-platform=org.hibernate.dialect.PostgresPlusDialect",
-					"server.port=8081",
-					"spring.activemq.in-memory=true",
-					"spring.artemis.mode=native",
-					"spring.artemis.port=61616",
-					"spring.artemis.host=localhost"
+					"server.port=8081"
 			).applyTo(configurableApplicationContext.getEnvironment());
 		}
 	}
@@ -74,11 +76,13 @@ class TestTaskApplicationTests {
 	@BeforeAll
 	static void init(){
 		postgreSQLContainer.start();
+		/*artemisContainer.start();*/
 	}
 
 	@Test
 	public void testIsRunning(){
 		Assertions.assertTrue(postgreSQLContainer.isRunning());
+		/*Assertions.assertTrue(artemisContainer.isRunning());*/
 	}
 
 	@Test

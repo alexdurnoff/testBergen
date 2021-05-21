@@ -1,5 +1,7 @@
 package ru.durnov.testTask.jms;
 
+
+import org.apache.activemq.command.ActiveMQQueue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessageCreator;
@@ -21,7 +23,7 @@ public class JMSArtemisService implements JMSService {
 
     @Override
     public void send(JsonMessage jsonMessage) {
-        jmsTemplate.send(jsonMessage.getDestination(), new MessageCreator() {
+        jmsTemplate.send(new ActiveMQQueue(jsonMessage.getDestination()), new MessageCreator() {
             @Override
             public Message createMessage(Session session) throws JMSException {
                 Message message = session.createObjectMessage(jsonMessage);

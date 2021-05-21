@@ -2,11 +2,12 @@ package ru.durnov.testTask.requestbody;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class JsonMessages {
+public class JsonMessages implements Serializable {
     private final List<JsonMessage> messageList;
 
     public JsonMessages(){

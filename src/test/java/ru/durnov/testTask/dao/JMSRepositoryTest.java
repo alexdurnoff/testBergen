@@ -26,12 +26,12 @@ class JMSRepositoryTest {
 
     @Test
     public void testSave(){
-        JsonMessage jsonMessage = new JsonMessage(4, "localhost", "Привет, сосед!");
+        JsonMessage jsonMessage = new JsonMessage(4, "test.queue1", "Привет, сосед!");
         jmsRepository.save(jsonMessage);
         JsonMessage jsonMessage1 = jmsRepository.findById(4L).get();
         Assertions.assertEquals(jsonMessage, jsonMessage1);
         Assertions.assertEquals(jsonMessage1.getId(), 4);
-        Assertions.assertEquals(jsonMessage1.getDestination(), "localhost");
+        Assertions.assertEquals(jsonMessage1.getDestination(), "test.queue1");
         Assertions.assertEquals(jsonMessage1.getBody(), "Привет, сосед!");
     }
 
@@ -39,7 +39,7 @@ class JMSRepositoryTest {
     public void testByDestination(){
         JsonMessages jsonMessages = jmsRepository.findByDestination("localhost.test.task");
         Assertions.assertEquals(jsonMessages.getMessageList().size(), 2);
-        jsonMessages = jmsRepository.findByDestination("192.168.1.190.test.task");
+        jsonMessages = jmsRepository.findByDestination("test.queue2");
         Assertions.assertEquals(jsonMessages.getMessageList().size(), 1);
     }
 
@@ -61,7 +61,7 @@ class JMSRepositoryTest {
 
     @Test
     void testDestinationToString() throws IOException {
-        JsonDestination jsonDestination = new JsonDestination("localhost");
+        JsonDestination jsonDestination = new JsonDestination("test.queue1");
         ObjectMapper objectMapper = new ObjectMapper();
         String json = new String(objectMapper.writeValueAsBytes(jsonDestination));
         Files.newBufferedWriter(Path.of("jsondestionation1.txt")).write(json);
