@@ -46,14 +46,12 @@ public class JMSControllerTest {
 
     @Test
     public void saveNewMessagesTest() throws Exception {
-        JsonMessage message1 = new JsonMessage(4, "localhost", "Превед");
-        JsonMessage message2 = new JsonMessage(5, "localhost", "Пока");
+        JsonMessage message1 = new JsonMessage(4, "jms.message.mq", "Превед");
+        JsonMessage message2 = new JsonMessage(5, "jms.message.mq", "Пока");
         JsonMessages jsonMessages = new JsonMessages(message1, message2);
-        ObjectMapper objectMapper = new ObjectMapper();
-        String json = new String(objectMapper.writeValueAsBytes(jsonMessages));
         mockMvc.perform(post("/")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(json))
+                .content(jsonMessages.json()))
                 .andExpect(MockMvcResultMatchers.status().is(HttpStatus.CREATED.value()));
     }
 
@@ -61,28 +59,26 @@ public class JMSControllerTest {
     public void testFindBuId() throws Exception {
         when(jmsRepository.findById(2L))
                 .thenReturn(java.util.Optional.of(
-                        new JsonMessage(2L, "192.168.1.190.test.task", "Пока, сосед!")
+                        new JsonMessage(2L, "jms.message.mq", "Пока, сосед!")
                 ));
         mockMvc.perform(get("/2"))
                 .andExpect(MockMvcResultMatchers.status().is(HttpStatus.FOUND.value()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.body").value("Пока, сосед!"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.destination").value("192.168.1.190.test.task"));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.destination").value("jms.message.mq"));
     }
 
     @Test
     public void testFindByDestination() throws Exception {
-        when(jmsRepository.findByDestination("192.168.1.190.test.task"))
+        when(jmsRepository.findByDestination("jms.message.mq"))
                 .thenReturn(Optional.of(
                         new JsonMessages(
-                                new JsonMessage(1L, "192.168.1.190.test.task", "Превед, сосед!"),
-                                new JsonMessage(2L, "192.168.1.190.test.task", "Пока, сосед!")
+                                new JsonMessage(1L, "jms.message.mq", "Превед, сосед!"),
+                                new JsonMessage(2L, "jms.message.mq", "Пока, сосед!")
                         )
                 ).get());
-        ObjectMapper objectMapper = new ObjectMapper();
-        String json = new String(objectMapper.writeValueAsBytes(new JsonDestination("192.168.1.190.test.task")));
         mockMvc.perform(get("/search_by_destination")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(json))
+                .content(new JsonDestination("jms.message.mq").json()))
                 .andExpect(MockMvcResultMatchers.status().is(HttpStatus.FOUND.value()));
     }
 
@@ -92,20 +88,18 @@ public class JMSControllerTest {
                 LocalDateTime.of(2021, 5, 1, 23, 15),
                 LocalDateTime.of(2021, 5, 10, 19, 15)
         );
-        ObjectMapper objectMapper = new ObjectMapper();
-        String json = new String(objectMapper.writeValueAsBytes(jsonInterval));
         when(jmsRepository.findByInterval(
                 LocalDateTime.of(2021, 5, 1, 23, 15).toString(),
                 LocalDateTime.of(2021, 5, 10, 19, 15).toString()
         )).thenReturn(
                 new JsonMessages(
-                        new JsonMessage(1, "localhost", "Превед!"),
-                        new JsonMessage(2, "localhost", "Пока!")
+                        new JsonMessage(1, "jms.message.mq", "Превед!"),
+                        new JsonMessage(2, "jms.message.mq", "Пока!")
                 )
         );
         mockMvc.perform(get("/search_by_interval")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(json))
+                .content(jsonInterval.json()))
                 .andExpect(MockMvcResultMatchers.status().is(HttpStatus.FOUND.value()));
 
     }

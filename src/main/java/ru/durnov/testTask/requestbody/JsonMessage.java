@@ -2,6 +2,8 @@ package ru.durnov.testTask.requestbody;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -10,7 +12,7 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "messages")
-public class JsonMessage implements Serializable {
+public class JsonMessage implements Serializable, RequestBody {
     @Id
     private long id;
     private String destination;
@@ -93,6 +95,7 @@ public class JsonMessage implements Serializable {
             setCreatedAT(createdAT);
         }
     }
+
 
     @Override
     public boolean equals(Object o) {

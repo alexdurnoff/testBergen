@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class JsonMessages implements Serializable {
+public class JsonMessages implements Serializable, RequestBody {
     private final List<JsonMessage> messageList;
 
     public JsonMessages(){

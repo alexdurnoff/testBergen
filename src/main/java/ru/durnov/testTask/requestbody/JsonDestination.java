@@ -2,7 +2,7 @@ package ru.durnov.testTask.requestbody;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class JsonDestination {
+public class JsonDestination implements RequestBody{
     private String destination;
 
     public JsonDestination(String destination){

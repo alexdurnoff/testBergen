@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 
-public class JsonInterval {
+public class JsonInterval implements RequestBody{
     private String start;
     private String stop;
 

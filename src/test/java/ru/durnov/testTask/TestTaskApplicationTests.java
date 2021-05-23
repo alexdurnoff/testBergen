@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ApplicationContextInitializer;
@@ -18,12 +17,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import ru.durnov.testTask.controller.JMSController;
 import ru.durnov.testTask.requestbody.JsonDestination;
 import ru.durnov.testTask.requestbody.JsonInterval;
 import ru.durnov.testTask.requestbody.JsonMessage;
@@ -45,9 +42,6 @@ class TestTaskApplicationTests {
 
 	private static final ObjectMapper objectMapper = new ObjectMapper();
 
-	/*@Container
-	public static GenericContainer<?> artemisContainer = new GenericContainer<>("vromero/activemq-artemis")
-			.withExposedPorts(61616);*/
 
 	@Container
 	public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:13")
@@ -66,7 +60,6 @@ class TestTaskApplicationTests {
 					"spring.datasource.password=" + postgreSQLContainer.getPassword(),
 					"spring.datasource.driverClassName=org.postgresql.Driver",
 					"embedded.postgresql.schema=data.sql",
-					"org.apache.activemq=artemis-jms-server",
 					"spring.jpa.database-platform=org.hibernate.dialect.PostgresPlusDialect",
 					"server.port=8081"
 			).applyTo(configurableApplicationContext.getEnvironment());
@@ -76,18 +69,16 @@ class TestTaskApplicationTests {
 	@BeforeAll
 	static void init(){
 		postgreSQLContainer.start();
-		/*artemisContainer.start();*/
 	}
 
 	@Test
 	public void testIsRunning(){
 		Assertions.assertTrue(postgreSQLContainer.isRunning());
-		/*Assertions.assertTrue(artemisContainer.isRunning());*/
 	}
 
 	@Test
 	public void testSaveHttpRequest() throws Exception {
-		JsonMessages jsonMessages = new JsonMessages(new JsonMessage(4, "localhost", "Hello, world!"));
+		JsonMessages jsonMessages = new JsonMessages(new JsonMessage(4, "jms.message.mq", "Hello, world!"));
 		mockMvc.perform(post("/")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(jsonMessages)))
@@ -99,14 +90,14 @@ class TestTaskApplicationTests {
 		mockMvc.perform(get("/2"))
 				.andExpect(MockMvcResultMatchers.status().is(HttpStatus.FOUND.value()))
 				.andExpect(MockMvcResultMatchers.jsonPath("$.body").value("Пока, сосед!"))
-				.andExpect(MockMvcResultMatchers.jsonPath("$.destination").value("192.168.1.190.test.task"));
+				.andExpect(MockMvcResultMatchers.jsonPath("$.destination").value("jms.message.mq"));
 	}
 
 	@Test
 	public void testByDestination() throws Exception {
 		mockMvc.perform(get("/search_by_destination")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(new JsonDestination("192.168.1.190.test.task"))))
+				.content(objectMapper.writeValueAsString(new JsonDestination("jms.message.mq"))))
 				.andExpect(MockMvcResultMatchers.status().is(HttpStatus.FOUND.value()));
 	}
 
