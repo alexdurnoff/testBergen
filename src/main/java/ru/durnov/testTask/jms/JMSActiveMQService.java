@@ -5,11 +5,6 @@ package ru.durnov.testTask.jms;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
-import ru.durnov.testTask.requestbody.JsonMessage;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Session;
 
 @Service
 public class JMSActiveMQService implements JMSService {
@@ -21,7 +16,7 @@ public class JMSActiveMQService implements JMSService {
     }
 
     @Override
-    public void send(JsonMessage jsonMessage) {
-        jmsTemplate.convertAndSend(jsonMessage.getDestination(), jsonMessage);
+    public void send(JMSMessage JMSMessage) {
+        jmsTemplate.convertAndSend(JMSMessage.getDestination(), JMSMessage);
     }
 }

@@ -1,6 +1,8 @@
 package ru.durnov.testTask.requestbody;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -19,12 +21,18 @@ public class JsonMessages implements Serializable, RequestBody {
         this.messageList.addAll(messageList);
     }
 
-    public JsonMessages(JsonMessage ... messages){
+    public JsonMessages(JsonMessage... messages){
         this(Arrays.asList(messages));
     }
 
     @JsonProperty
-    public List<JsonMessage> getMessageList() {
-        return messageList;
+    public JsonMessage[] messages() {
+        return messageList.toArray(new JsonMessage[0]);
+    }
+
+    @Override
+    public String json() throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.writeValueAsString(messages());
     }
 }

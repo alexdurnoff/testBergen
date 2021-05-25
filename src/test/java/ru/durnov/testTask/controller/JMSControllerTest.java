@@ -13,16 +13,17 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import ru.durnov.testTask.dao.JMSRepository;
 import ru.durnov.testTask.jms.JMSService;
 import ru.durnov.testTask.requestbody.JsonDestination;
 import ru.durnov.testTask.requestbody.JsonInterval;
+import ru.durnov.testTask.jms.JMSMessage;
 import ru.durnov.testTask.requestbody.JsonMessage;
 import ru.durnov.testTask.requestbody.JsonMessages;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.Mockito.when;
@@ -46,8 +47,8 @@ public class JMSControllerTest {
 
     @Test
     public void saveNewMessagesTest() throws Exception {
-        JsonMessage message1 = new JsonMessage(4, "jms.message.mq", "Превед");
-        JsonMessage message2 = new JsonMessage(5, "jms.message.mq", "Пока");
+        JsonMessage message1 = new JsonMessage(4, "DLQ", "Превед");
+        JsonMessage message2 = new JsonMessage(5, "DLQ", "Пока");
         JsonMessages jsonMessages = new JsonMessages(message1, message2);
         mockMvc.perform(post("/")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -59,26 +60,25 @@ public class JMSControllerTest {
     public void testFindBuId() throws Exception {
         when(jmsRepository.findById(2L))
                 .thenReturn(java.util.Optional.of(
-                        new JsonMessage(2L, "jms.message.mq", "Пока, сосед!")
+                        new JMSMessage(2L, "DLQ", "Пока, сосед!")
                 ));
         mockMvc.perform(get("/2"))
                 .andExpect(MockMvcResultMatchers.status().is(HttpStatus.FOUND.value()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.body").value("Пока, сосед!"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.destination").value("jms.message.mq"));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.destination").value("DLQ"));
     }
 
     @Test
     public void testFindByDestination() throws Exception {
         when(jmsRepository.findByDestination("jms.message.mq"))
                 .thenReturn(Optional.of(
-                        new JsonMessages(
-                                new JsonMessage(1L, "jms.message.mq", "Превед, сосед!"),
-                                new JsonMessage(2L, "jms.message.mq", "Пока, сосед!")
-                        )
+                        Arrays.asList(
+                                new JMSMessage(1L, "DLQ", "Превед, сосед!"),
+                                new JMSMessage(2L, "DLQ", "Пока, сосед!"))
                 ).get());
         mockMvc.perform(get("/search_by_destination")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(new JsonDestination("jms.message.mq").json()))
+                .content(new JsonDestination("DLQ").json()))
                 .andExpect(MockMvcResultMatchers.status().is(HttpStatus.FOUND.value()));
     }
 
@@ -92,10 +92,9 @@ public class JMSControllerTest {
                 LocalDateTime.of(2021, 5, 1, 23, 15).toString(),
                 LocalDateTime.of(2021, 5, 10, 19, 15).toString()
         )).thenReturn(
-                new JsonMessages(
-                        new JsonMessage(1, "jms.message.mq", "Превед!"),
-                        new JsonMessage(2, "jms.message.mq", "Пока!")
-                )
+                Arrays.asList(
+                        new JMSMessage(1, "DLQ", "Превед!"),
+                        new JMSMessage(2, "DLQ", "Пока!"))
         );
         mockMvc.perform(get("/search_by_interval")
                 .contentType(MediaType.APPLICATION_JSON)

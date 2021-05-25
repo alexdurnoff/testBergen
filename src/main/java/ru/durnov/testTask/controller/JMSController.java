@@ -11,10 +11,13 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.durnov.testTask.jms.JMSService;
 import ru.durnov.testTask.requestbody.JsonDestination;
 import ru.durnov.testTask.requestbody.JsonInterval;
+import ru.durnov.testTask.jms.JMSMessage;
 import ru.durnov.testTask.requestbody.JsonMessage;
 import ru.durnov.testTask.requestbody.JsonMessages;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -32,23 +35,24 @@ public class JMSController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<?> receiveMessage(@RequestBody JsonMessages jsonMessages){
-        jsonMessages.getMessageList().forEach(jsonMessage -> {
-            saveMessage(jsonMessage);
-            this.jmsService.send(jsonMessage);
+    public ResponseEntity<?> receiveMessage(@RequestBody JsonMessage... jsonMessages){
+        Arrays.stream(jsonMessages).forEach(jsonMessage -> {
+            JMSMessage jmsMessage = new JMSMessage(jsonMessage);
+            saveMessage(jmsMessage);
+            jmsService.send(jmsMessage);
         });
         return ResponseEntity.created(URI.create("/")).build();
     }
 
     @Async
-    private void saveMessage(JsonMessage jsonMessage) {
-        jmsRepository.save(jsonMessage);
+    private void saveMessage(JMSMessage JMSMessage) {
+        jmsRepository.save(JMSMessage);
     }
 
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.FOUND)
-    public JsonMessage messageById(@PathVariable long id) {
-        Optional<JsonMessage> optionalJsonMessage = jmsRepository.findById(id);
+    public JMSMessage messageById(@PathVariable long id) {
+        Optional<JMSMessage> optionalJsonMessage = jmsRepository.findById(id);
         if (optionalJsonMessage.isPresent()) return optionalJsonMessage.get();
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found");
     }
@@ -56,13 +60,13 @@ public class JMSController {
 
     @GetMapping("/search_by_interval")
     @ResponseStatus(HttpStatus.FOUND)
-    public JsonMessages messagesByInterval(JsonInterval jsonInterval) {
+    public List<JMSMessage> messagesByInterval(JsonInterval jsonInterval) {
         return jmsRepository.findByInterval(jsonInterval.getStart(), jsonInterval.getStop());
     }
 
     @GetMapping("/search_by_destination")
     @ResponseStatus(HttpStatus.FOUND)
-    public JsonMessages messageByDestination(JsonDestination jsonDestination) {
+    public List<JMSMessage> messageByDestination(JsonDestination jsonDestination) {
         return jmsRepository.findByDestination(jsonDestination.getDestination());
     }
 

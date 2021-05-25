@@ -1,5 +1,6 @@
 package ru.durnov.testTask;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -17,16 +18,24 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import org.testcontainers.utility.DockerImageName;
 import ru.durnov.testTask.requestbody.JsonDestination;
 import ru.durnov.testTask.requestbody.JsonInterval;
+import ru.durnov.testTask.jms.JMSMessage;
 import ru.durnov.testTask.requestbody.JsonMessage;
 import ru.durnov.testTask.requestbody.JsonMessages;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -36,6 +45,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(initializers = {TestTaskApplicationTests.Initializer.class})
 @AutoConfigureMockMvc
+@Slf4j
 class TestTaskApplicationTests {
 	@Autowired
 	private MockMvc mockMvc;
@@ -50,6 +60,13 @@ class TestTaskApplicationTests {
 			.withPassword("alexej")
 			.withInitScript("data.sql");
 
+	@Container
+	public static GenericContainer artemis =
+			new GenericContainer(DockerImageName.parse("toddbaert/artemis-docker"))
+			.withExposedPorts(61616,8161)
+			.withLogConsumer(new Slf4jLogConsumer(log))
+			.withEnv("queues", "jms.message.queue1, jms.message.queue2, DLQ");
+
 	@Configuration
 	public static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 		@Override
@@ -61,27 +78,38 @@ class TestTaskApplicationTests {
 					"spring.datasource.driverClassName=org.postgresql.Driver",
 					"embedded.postgresql.schema=data.sql",
 					"spring.jpa.database-platform=org.hibernate.dialect.PostgresPlusDialect",
+					"spring.artemis.user=root",
+					"spring.artemis.host=" + artemis.getHost(),
+					"spring.artemis.port=" + artemis.getMappedPort(61616),
 					"server.port=8081"
 			).applyTo(configurableApplicationContext.getEnvironment());
 		}
 	}
 
+
+
 	@BeforeAll
 	static void init(){
 		postgreSQLContainer.start();
+		artemis.setPortBindings(Arrays.asList("61616:61616", "8161:8161"));
+		//artemis.setExposedPorts(Arrays.asList(61616, 8161));
+		artemis.start();
 	}
 
 	@Test
 	public void testIsRunning(){
 		Assertions.assertTrue(postgreSQLContainer.isRunning());
+		Assertions.assertTrue(artemis.isRunning());
 	}
+
+
 
 	@Test
 	public void testSaveHttpRequest() throws Exception {
-		JsonMessages jsonMessages = new JsonMessages(new JsonMessage(4, "jms.message.mq", "Hello, world!"));
+		JsonMessages jsonMessages = new JsonMessages(new JsonMessage(4, "jms.message.queue1", "Hello, world!"));
 		mockMvc.perform(post("/")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(jsonMessages)))
+				.content(objectMapper.writeValueAsString(jsonMessages.messages())))
 				.andExpect(MockMvcResultMatchers.status().is(HttpStatus.CREATED.value()));
 	}
 
@@ -90,14 +118,14 @@ class TestTaskApplicationTests {
 		mockMvc.perform(get("/2"))
 				.andExpect(MockMvcResultMatchers.status().is(HttpStatus.FOUND.value()))
 				.andExpect(MockMvcResultMatchers.jsonPath("$.body").value("Пока, сосед!"))
-				.andExpect(MockMvcResultMatchers.jsonPath("$.destination").value("jms.message.mq"));
+				.andExpect(MockMvcResultMatchers.jsonPath("$.destination").value("DLQ"));
 	}
 
 	@Test
 	public void testByDestination() throws Exception {
 		mockMvc.perform(get("/search_by_destination")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(new JsonDestination("jms.message.mq"))))
+				.content(objectMapper.writeValueAsString(new JsonDestination("DLQ"))))
 				.andExpect(MockMvcResultMatchers.status().is(HttpStatus.FOUND.value()));
 	}
 
