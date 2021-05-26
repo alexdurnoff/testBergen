@@ -70,7 +70,7 @@ public class JMSControllerTest {
 
     @Test
     public void testFindByDestination() throws Exception {
-        when(jmsRepository.findByDestination("jms.message.mq"))
+        when(jmsRepository.findByDestination("DLQ"))
                 .thenReturn(Optional.of(
                         Arrays.asList(
                                 new JMSMessage(1L, "DLQ", "Превед, сосед!"),

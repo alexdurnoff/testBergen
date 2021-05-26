@@ -33,10 +33,10 @@ class JMSRepositoryTest {
 
     @Test
     public void testByDestination(){
-        List<JMSMessage> messages = jmsRepository.findByDestination("DLQ");
-        Assertions.assertEquals(messages.size(), 3);
-        messages = jmsRepository.findByDestination("test.queue2");
-        Assertions.assertEquals(messages.size(), 0);
+        List<JMSMessage> messages = jmsRepository.findByDestination("jms.message.queue1");
+        Assertions.assertEquals(messages.size(), 2);
+        messages = jmsRepository.findByDestination("jms.message.queue2");
+        Assertions.assertEquals(messages.size(), 1);
     }
 
     @Test

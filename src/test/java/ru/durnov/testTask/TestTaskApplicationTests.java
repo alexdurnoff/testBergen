@@ -92,7 +92,6 @@ class TestTaskApplicationTests {
 	static void init(){
 		postgreSQLContainer.start();
 		artemis.setPortBindings(Arrays.asList("61616:61616", "8161:8161"));
-		//artemis.setExposedPorts(Arrays.asList(61616, 8161));
 		artemis.start();
 	}
 
@@ -118,14 +117,14 @@ class TestTaskApplicationTests {
 		mockMvc.perform(get("/2"))
 				.andExpect(MockMvcResultMatchers.status().is(HttpStatus.FOUND.value()))
 				.andExpect(MockMvcResultMatchers.jsonPath("$.body").value("Пока, сосед!"))
-				.andExpect(MockMvcResultMatchers.jsonPath("$.destination").value("DLQ"));
+				.andExpect(MockMvcResultMatchers.jsonPath("$.destination").value("jms.message.queue1"));
 	}
 
 	@Test
 	public void testByDestination() throws Exception {
 		mockMvc.perform(get("/search_by_destination")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(new JsonDestination("DLQ"))))
+				.content(objectMapper.writeValueAsString(new JsonDestination("jms.message.queue1"))))
 				.andExpect(MockMvcResultMatchers.status().is(HttpStatus.FOUND.value()));
 	}
 
