@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import ru.durnov.testTask.jms.JMSMessage;
-import ru.durnov.testTask.requestbody.JsonMessages;
 
 import java.util.List;
 
